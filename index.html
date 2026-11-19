@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    a { color: #aaa; font-size: 20px; text-decoration: none; cursor: pointer; }
+    a:hover { color: white; }
+  </style>
+</head>
+<body>
+
+  <div>
+    <h1>Bookmark this page</h1>
+    <a href="about:blank" target="_blank" id="start">Click to start</a>
+  </div>
+
+  <script type="text/plain" id="pageTpl">
+<style>
+  :root {
+    --bg: #070707; --panel: #101010; --panel-hover: #181818;
+    --line: #232323; --line-strong: #4a4a4a; --text: #f5f5f5;
+    --muted: #7d7d7d;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: radial-gradient(ellipse 70% 40% at 50% -10%, rgba(255,255,255,0.07), transparent 70%), var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10; height: 68px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 6%;
+    background: rgba(7,7,7,0.75);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .logo { font-size: 18px; font-weight: 800; letter-spacing: 4px; }
+  .status {
+    display: flex; align-items: center; gap: 8px; color: var(--muted);
+    font-size: 11px; letter-spacing: 1.5px; padding: 7px 13px;
+    border: 1px solid var(--line); border-radius: 999px;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.7); }
+  main { max-width: 1200px; margin: auto; padding: 70px 6% 90px; }
+  .heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 36px; }
+  .heading h1 { font-size: 44px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 10px; }
+  .heading p { color: var(--muted); font-size: 15px; }
+  .search {
+    width: 260px; max-width: 100%; background: var(--panel); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; padding: 13px 16px;
+    font-size: 14px; outline: none; transition: border-color 0.2s, background 0.2s;
+  }
+  .search::placeholder { color: #555; }
+  .search:focus { border-color: var(--line-strong); background: var(--panel-hover); }
+  .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .game {
+    display: flex; flex-direction: column; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 14px; padding: 0; overflow: hidden;
+    cursor: pointer; text-align: left; color: var(--text); font-family: inherit;
+    transition: transform 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    animation: rise 0.4s ease both;
+  }
+  .game:hover, .game:focus-visible {
+    background: var(--panel-hover); border-color: var(--line-strong);
+    transform: translateY(-4px); box-shadow: 0 14px 30px rgba(0,0,0,0.55); outline: none;
+  }
+  .game-thumb {
+    position: relative; width: 100%; aspect-ratio: 16 / 10; display: grid; place-items: center;
+    overflow: hidden; background: linear-gradient(135deg, #1a1a1a, #0b0b0b); border-bottom: 1px solid var(--line);
+  }
+  .game-thumb .letter { font-size: 44px; font-weight: 800; color: #333; }
+  .game-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s ease; }
+  .game:hover .game-thumb img { transform: scale(1.06); }
+  .game-info { padding: 16px 18px 18px; }
+  .game-name { font-size: 16px; font-weight: 700; line-height: 1.25; word-break: break-word; }
+  .game-label {
+    display: flex; align-items: center; justify-content: space-between; color: var(--muted);
+    font-size: 11px; letter-spacing: 1.5px; margin-top: 8px; transition: color 0.2s;
+  }
+  .game-label .arrow { transition: transform 0.2s; }
+  .game:hover .game-label { color: var(--text); }
+  .game:hover .game-label .arrow { transform: translateX(4px); }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .message {
+    grid-column: 1 / -1; border: 1px dashed var(--line-strong); border-radius: 14px;
+    padding: 30px; color: #aaa; font-size: 14px; line-height: 1.6;
+  }
+  .message strong { color: var(--text); display: block; font-size: 16px; margin-bottom: 8px; }
+  #player { display: none; position: fixed; inset: 0; background: #000; z-index: 100; flex-direction: column; }
+  .player-bar {
+    height: 52px; flex: none; display: flex; align-items: center; gap: 10px;
+    padding: 0 14px; background: #0b0b0b; border-bottom: 1px solid var(--line);
+  }
+  .player-title {
+    flex: 1; text-align: center; font-size: 13px; font-weight: 700; letter-spacing: 1px;
+    color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bar-btn {
+    background: transparent; color: var(--text); border: 1px solid var(--line-strong);
+    border-radius: 8px; padding: 8px 14px; font-size: 12.5px; font-family: inherit;
+    cursor: pointer; white-space: nowrap; transition: background 0.15s, color 0.15s;
+  }
+  .bar-btn:hover { background: var(--text); color: #000; }
+  #gameFrame { flex: 1; width: 100%; border: none; background: #000; }
+  @media (max-width: 600px) {
+    main { padding-top: 40px; }
+    .heading h1 { font-size: 32px; }
+    .search { width: 100%; }
+    .game-grid { grid-template-columns: repeat(2, 1fr); }
+    .game-info { padding: 12px 14px 14px; }
+    .bar-btn.optional { display: none; }
+  }
+</style>
+
+<header id="header">
+  <div class="logo">ABOUT:BLANK</div>
+  <div class="status"><span class="dot"></span><span>CONNECTED</span></div>
+</header>
+
+<main id="library">
+  <div class="heading">
+    <div>
+      <h1>Titles.</h1>
+      <p>Select a title to start playing.</p>
+    </div>
+    <input class="search" id="search" type="search" placeholder="Search titles..." autocomplete="off" aria-label="Search titles">
+  </div>
+  <div class="game-grid" id="gameGrid"></div>
+</main>
+
+<div id="player">
+  <div class="player-bar">
+    <button class="bar-btn" id="backBtn">&larr; Back</button>
+    <div class="player-title" id="playerTitle"></div>
+    <button class="bar-btn optional" id="fsBtn">Fullscreen</button>
+  </div>
+  <iframe id="gameFrame" src="about:blank" allow="fullscreen; autoplay; gamepad" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+</div>
+  </script>
+
+  <script>
+    const DB = "https://new-tab-2-d6042-default-rtdb.firebaseio.com";
+
+    function pageMain(DATA) {
+      var gameGrid = document.getElementById("gameGrid");
+      var searchEl = document.getElementById("search");
+      var playerEl = document.getElementById("player");
+      var libraryEl = document.getElementById("library");
+      var headerEl = document.getElementById("header");
+      var frameEl = document.getElementById("gameFrame");
+
+      function toGame(key, value) {
+        if (typeof value === "string" && /^https?:\/\//i.test(value)) {
+          return { name: key, url: value, image: "" };
+        }
+        if (value && typeof value === "object") {
+          var name = value.name || value.title;
+          var url = value.url || value.link || value.href;
+          var image = value.image || value.img || value.thumbnail || value.icon || value.cover;
+          if (typeof name === "string" && typeof url === "string") {
+            return { name: name, url: url, image: typeof image === "string" ? image : "" };
+          }
+        }
+        return null;
+      }
+
+      function collect(data) {
+        var list = [];
+        (function scan(obj, depth) {
+          if (!obj || typeof obj !== "object") return;
+          Object.keys(obj).forEach(function (key) {
+            var g = toGame(key, obj[key]);
+            if (g) list.push(g);
+            else if (depth < 2) scan(obj[key], depth + 1);
+          });
+        })(data, 0);
+        return list;
+      }
+
+      var allGames = collect(DATA);
+
+      function message(title, body) {
+        var box = document.createElement("div");
+        box.className = "message";
+        var t = document.createElement("strong");
+        t.textContent = title;
+        box.appendChild(t);
+        box.appendChild(document.createTextNode(body));
+        gameGrid.appendChild(box);
+      }
+
+      function render() {
+        var q = searchEl.value.trim().toLowerCase();
+        var shown = allGames
+          .filter(function (g) { return g.name.toLowerCase().indexOf(q) !== -1; })
+          .sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+        gameGrid.replaceChildren();
+
+        if (shown.length === 0) {
+          message("No games found", q ? "Nothing matches your search." : "The library is empty.");
+          return;
+        }
+
+        shown.forEach(function (game, i) {
+          var card = document.createElement("button");
+          card.className = "game";
+          card.type = "button";
+          card.style.animationDelay = Math.min(i * 25, 400) + "ms";
+
+          var thumb = document.createElement("div");
+          thumb.className = "game-thumb";
+          var letter = document.createElement("span");
+          letter.className = "letter";
+          letter.textContent = (game.name.trim()[0] || "?").toUpperCase();
+          thumb.appendChild(letter);
+
+          if (game.image) {
+            var img = document.createElement("img");
+            img.alt = "";
+            img.loading = "lazy";
+            img.referrerPolicy = "no-referrer";
+            img.onerror = function () { img.remove(); };
+            img.src = game.image;
+            thumb.appendChild(img);
+          }
+
+          var info = document.createElement("div");
+          info.className = "game-info";
+          var name = document.createElement("div");
+          name.className = "game-name";
+          name.textContent = game.name;
+
+          var label = document.createElement("div");
+          label.className = "game-label";
+          var play = document.createElement("span");
+          play.textContent = "PLAY NOW";
+          var arrow = document.createElement("span");
+          arrow.className = "arrow";
+          arrow.textContent = "\u2192";
+          label.appendChild(play);
+          label.appendChild(arrow);
+
+          info.appendChild(name);
+          info.appendChild(label);
+          card.appendChild(thumb);
+          card.appendChild(info);
+          card.addEventListener("click", function () { openGame(game); });
+          gameGrid.appendChild(card);
+        });
+      }
+
+      function openGame(game) {
+        try {
+          var parsed = new URL(game.url);
+          if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+            alert("Invalid game URL.");
+            return;
+          }
+          frameEl.src = parsed.href;
+          document.getElementById("playerTitle").textContent = game.name.toUpperCase();
+          playerEl.style.display = "flex";
+          libraryEl.style.display = "none";
+          headerEl.style.display = "none";
+          document.documentElement.style.overflow = "hidden";
+        } catch (e) {
+          alert("This game has an invalid URL.");
+        }
+      }
+
+      function closeGame() {
+        frameEl.src = "about:blank";
+        playerEl.style.display = "none";
+        libraryEl.style.display = "block";
+        headerEl.style.display = "flex";
+        document.documentElement.style.overflow = "";
+      }
+
+      document.getElementById("backBtn").addEventListener("click", closeGame);
+      document.getElementById("fsBtn").addEventListener("click", function () {
+        if (frameEl.requestFullscreen) frameEl.requestFullscreen();
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && playerEl.style.display === "flex" && !document.fullscreenElement) closeGame();
+      });
+      searchEl.addEventListener("input", render);
+
+      render();
+    }
+
+    document.getElementById("start").addEventListener("click", function (event) {
+      const tab = window.open("about:blank", "_blank");
+      if (!tab) return;
+      event.preventDefault();
+      run(tab);
+    });
+
+    async function run(tab) {
+      const doc = tab.document;
+      doc.open();
+      doc.write("<!DOCTYPE html><html><head><title>Loading</title></head>" +
+        "<body style='margin:0;background:#111;color:#fff;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh'>Loading...</body></html>");
+      doc.close();
+
+      try {
+        const res = await fetch(DB + "/games.json");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const games = await res.json();
+
+        const json = JSON.stringify(games === undefined ? null : games)
+          .replace(/</g, "\\u003c")
+          .replace(/\u2028/g, "\\u2028")
+          .replace(/\u2029/g, "\\u2029");
+
+        const srcdoc =
+          "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'>" +
+          "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
+          "<title>about:blank</title></head><body>" +
+          document.getElementById("pageTpl").textContent +
+          "<script>(" + pageMain.toString() + ")(" + json + ");<\/script>" +
+          "</body></html>";
+
+        const iframe = doc.createElement("iframe");
+        iframe.style.cssText = "position:fixed;inset:0;width:100%;height:100%;border:0;background:#000";
+        iframe.setAttribute("allow", "fullscreen; autoplay; gamepad; clipboard-write");
+        iframe.setAttribute("allowfullscreen", "");
+        iframe.srcdoc = srcdoc;
+
+        doc.title = "about:blank";
+        doc.body.replaceChildren(iframe);
+      } catch (err) {
+        doc.body.textContent = "Couldn't load games: " + err.message;
+      }
+    }
+  </script>
+
+</body>
+</html>
